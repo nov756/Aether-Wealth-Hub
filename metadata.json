@@ -1,0 +1,6 @@
+{
+  "name": "Aether Wealth Hub",
+  "description": "Platform manajemen keuangan cerdas dengan antarmuka cerah interaktif, alokasi anggaran 50/30/20, simulasi FIRE dinamis, dan pelacakan kekayaan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

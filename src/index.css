@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* --- THEME 1: Light Indigo (Default Modern) --- */
+.theme-light-indigo {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* --- THEME 2: Light Emerald (Sage Wealth) --- */
+.theme-light-emerald {
+  background-color: #f0fdf4 !important;
+  color: #064e3b !important;
+}
+.theme-light-emerald .bg-slate-50 {
+  background-color: #f0fdf4 !important;
+}
+.theme-light-emerald .border-slate-200 {
+  border-color: #bbf7d0 !important;
+}
+.theme-light-emerald .border-slate-100 {
+  border-color: #dcfce7 !important;
+}
+
+/* --- THEME 3: Light Amber (Executive Gold) --- */
+.theme-light-amber {
+  background-color: #fffbeb !important;
+  color: #78350f !important;
+}
+.theme-light-amber .bg-slate-50 {
+  background-color: #fffbeb !important;
+}
+.theme-light-amber .border-slate-200 {
+  border-color: #fde68a !important;
+}
+.theme-light-amber .border-slate-100 {
+  border-color: #fef3c7 !important;
+}
+
+/* --- THEME 4: Dark Obsidian (Cyber Pro) --- */
+.theme-dark-obsidian {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+}
+.theme-dark-obsidian header {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(56, 189, 248, 0.2) !important;
+}
+.theme-dark-obsidian footer {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(56, 189, 248, 0.15) !important;
+}
+.theme-dark-obsidian .bg-slate-50 {
+  background-color: #090d16 !important;
+}
+.theme-dark-obsidian .bg-white {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+  border-color: rgba(56, 189, 248, 0.18) !important;
+}
+.theme-dark-obsidian .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+.theme-dark-obsidian .text-slate-900 {
+  color: #f8fafc !important;
+}
+.theme-dark-obsidian .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+.theme-dark-obsidian .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+.theme-dark-obsidian .text-slate-600,
+.theme-dark-obsidian .text-slate-500 {
+  color: #94a3b8 !important;
+}
+.theme-dark-obsidian .border-slate-200,
+.theme-dark-obsidian .border-slate-100 {
+  border-color: rgba(56, 189, 248, 0.16) !important;
+}
+.theme-dark-obsidian input,
+.theme-dark-obsidian select {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: rgba(56, 189, 248, 0.25) !important;
+}
+
+/* --- THEME 5: Dark Executive (Navy & Gold) --- */
+.theme-dark-executive {
+  background-color: #0b132b !important;
+  color: #f8fafc !important;
+}
+.theme-dark-executive header {
+  background-color: rgba(28, 37, 65, 0.9) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+.theme-dark-executive footer {
+  background-color: rgba(28, 37, 65, 0.8) !important;
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+.theme-dark-executive .bg-slate-50 {
+  background-color: #0b132b !important;
+}
+.theme-dark-executive .bg-white {
+  background-color: #1c2541 !important;
+  color: #f8fafc !important;
+  border-color: rgba(245, 158, 11, 0.22) !important;
+}
+.theme-dark-executive .bg-slate-100 {
+  background-color: #233156 !important;
+  color: #e2e8f0 !important;
+}
+.theme-dark-executive .text-slate-900 {
+  color: #f8fafc !important;
+}
+.theme-dark-executive .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+.theme-dark-executive .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+.theme-dark-executive .text-slate-600,
+.theme-dark-executive .text-slate-500 {
+  color: #94a3b8 !important;
+}
+.theme-dark-executive .border-slate-200,
+.theme-dark-executive .border-slate-100 {
+  border-color: rgba(245, 158, 11, 0.2) !important;
+}
+.theme-dark-executive input,
+.theme-dark-executive select {
+  background-color: #233156 !important;
+  color: #f8fafc !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
