@@ -250,8 +250,19 @@ export const TransactionsTab: React.FC<TransactionsTabProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-10 text-slate-400">
-                    Tidak ada transaksi yang cocok dengan kriteria pencarian
+                  <td colSpan={7} className="text-center py-12 text-slate-500">
+                    <div className="space-y-1.5">
+                      <p className="font-bold text-sm text-slate-700">
+                        {transactions.length === 0
+                          ? 'Belum ada transaksi tercatat'
+                          : 'Tidak ada transaksi yang cocok'}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {transactions.length === 0
+                          ? 'Mulai catat pemasukan atau pengeluaran pertama Anda untuk memonitor arus kas.'
+                          : 'Coba ubah kata kunci pencarian atau filter pilar.'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (

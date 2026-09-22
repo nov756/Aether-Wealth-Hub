@@ -319,7 +319,20 @@ export const BudgetingTab: React.FC<BudgetingTabProps> = ({
             </div>
 
             <div className="space-y-3.5">
-              {goals.map((g) => {
+              {goals.length === 0 ? (
+                <div className="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl space-y-2">
+                  <p className="text-xs font-semibold text-slate-500">
+                    Belum ada target tabungan yang dibuat.
+                  </p>
+                  <button
+                    onClick={onOpenAddGoal}
+                    className="text-xs font-bold text-emerald-600 hover:text-emerald-700 cursor-pointer"
+                  >
+                    + Buat Target Tabungan Pertama
+                  </button>
+                </div>
+              ) : (
+                goals.map((g) => {
                 const pct = Math.min(Number(((g.current / g.target) * 100).toFixed(1)), 100);
                 const isCompleted = pct >= 100;
 
@@ -405,7 +418,7 @@ export const BudgetingTab: React.FC<BudgetingTabProps> = ({
                     )}
                   </div>
                 );
-              })}
+              }))}
             </div>
           </div>
         </div>
@@ -432,7 +445,20 @@ export const BudgetingTab: React.FC<BudgetingTabProps> = ({
             </div>
 
             <div className="space-y-2.5">
-              {subscriptions.map((sub) => {
+              {subscriptions.length === 0 ? (
+                <div className="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl space-y-2">
+                  <p className="text-xs font-semibold text-slate-500">
+                    Belum ada langganan atau tagihan rutin.
+                  </p>
+                  <button
+                    onClick={onOpenAddSub}
+                    className="text-xs font-bold text-amber-600 hover:text-amber-700 cursor-pointer"
+                  >
+                    + Catat Tagihan Rutin
+                  </button>
+                </div>
+              ) : (
+                subscriptions.map((sub) => {
                 return (
                   <div
                     key={sub.id}
@@ -479,7 +505,7 @@ export const BudgetingTab: React.FC<BudgetingTabProps> = ({
                     </div>
                   </div>
                 );
-              })}
+              }))}
             </div>
           </div>
         </div>

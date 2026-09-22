@@ -8,7 +8,7 @@ export interface CurrencyConfig {
   name: string;
 }
 
-export type TabType = 'dashboard' | 'accounts' | 'budgeting' | 'transactions' | 'simulator' | 'settings';
+export type TabType = 'dashboard' | 'accounts' | 'budgeting' | 'transactions' | 'simulator' | 'calendar' | 'settings';
 
 export type ThemeId =
   | 'light-indigo'
@@ -32,12 +32,42 @@ export interface ThemeConfig {
 }
 
 export interface User {
+  id: string;
   name: string;
   email: string;
   role: string;
   avatarInitials: string;
+  photoURL?: string;
   joinedDate?: string;
   themePreference?: ThemeId;
+  currencyCode?: CurrencyCode;
+  authProvider?: 'google' | 'email' | 'demo' | 'guest';
+}
+
+export interface AIInsightItem {
+  title: string;
+  type: 'positive' | 'warning' | 'opportunity' | string;
+  detail: string;
+  impact: string;
+}
+
+export interface AIRecommendationItem {
+  step: string;
+  action: string;
+  expectedBenefit: string;
+}
+
+export interface AIAnalystData {
+  healthDiagnosis: string;
+  spendingAnomalyScore: string;
+  keyMetricsSummary: {
+    dominantCategory: string;
+    dailyBurnRate: string;
+    savingsPotential: string;
+  };
+  insights: AIInsightItem[];
+  actionableRecommendations: AIRecommendationItem[];
+  fireImpactNote: string;
 }
 
 export type AccountType = 'Bank' | 'E-Wallet' | 'Investment' | 'Cash';
@@ -109,3 +139,50 @@ export interface FIREParams {
   annualReturn: number; // in percentage (e.g. 8.0)
   desiredMonthlySpend: number;
 }
+
+export interface DailyHabitTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface DailyStreakDay {
+  dayLabel: string;
+  date: string;
+  checked: boolean;
+  isToday: boolean;
+}
+
+export interface DailyStreakState {
+  streakCount: number;
+  lastCheckInDate: string;
+  checkedInToday: boolean;
+  bestStreak: number;
+  weeklyActivity: DailyStreakDay[];
+  dailyTasks: DailyHabitTask[];
+  reminderEnabled: boolean;
+  reminderTime: string;
+}
+
+export type PlanCategory = 'Review' | 'Savings' | 'Investment' | 'Bills' | 'Debt' | 'FIRE';
+
+export type PlanRecurrence = 'once' | 'weekly' | 'monthly' | 'yearly';
+
+export interface FinancialCalendarPlan {
+  id: string;
+  title: string;
+  category: PlanCategory;
+  description: string;
+  targetAmount?: number; // In base USD
+  targetDate: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime: string; // HH:mm
+  recurrence: PlanRecurrence;
+  reminderMinutes: number; // e.g. 15, 60, 1440
+  googleEventId?: string;
+  googleEventLink?: string;
+  syncedAt?: string;
+  status: 'planned' | 'synced' | 'completed';
+}
+
+

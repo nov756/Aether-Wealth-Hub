@@ -1,4 +1,4 @@
-import { Account, CurrencyConfig, FIREParams, SavingsGoal, Subscription, Transaction } from '../types';
+import { Account, CurrencyConfig, FinancialCalendarPlan, FIREParams, SavingsGoal, Subscription, Transaction } from '../types';
 
 export const CURRENCIES: Record<string, CurrencyConfig> = {
   USD: {
@@ -273,3 +273,71 @@ export const INITIAL_FIRE_PARAMS: FIREParams = {
   annualReturn: 8.5,
   desiredMonthlySpend: 3500,
 };
+
+export const INITIAL_PLANS: FinancialCalendarPlan[] = [
+  {
+    id: 'plan-1',
+    title: 'Evaluasi & Alokasi Gaji 50/30/20',
+    category: 'Review',
+    description: 'Review mutasi pemasukan bulan ini, alokasikan 50% untuk Needs, 30% untuk Wants, dan 20% langsung transfer ke tabungan/investasi.',
+    targetAmount: 3200,
+    targetDate: '2026-09-25',
+    startTime: '09:00',
+    endTime: '10:00',
+    recurrence: 'monthly',
+    reminderMinutes: 60,
+    status: 'planned',
+  },
+  {
+    id: 'plan-2',
+    title: 'Setoran Rutin Dana Darurat (HYSA)',
+    category: 'Savings',
+    description: 'Transfer otomatis ke rekening Bank Jago / Ally High-Yield Savings Account untuk memperkuat bantalan dana darurat 6 bulan.',
+    targetAmount: 500,
+    targetDate: '2026-09-26',
+    startTime: '10:00',
+    endTime: '10:30',
+    recurrence: 'monthly',
+    reminderMinutes: 120,
+    status: 'planned',
+  },
+  {
+    id: 'plan-3',
+    title: 'DCA Index Fund ETF S&P 500 & Reksa Dana',
+    category: 'Investment',
+    description: 'Beli unit reksa dana indeks berkala (Dollar Cost Averaging) di Bibit / Brokerage sesuai formula alokasi aset pensiun.',
+    targetAmount: 850,
+    targetDate: '2026-09-28',
+    startTime: '14:00',
+    endTime: '14:45',
+    recurrence: 'monthly',
+    reminderMinutes: 60,
+    status: 'planned',
+  },
+  {
+    id: 'plan-4',
+    title: 'Audit Langganan SaaS & Pembayaran Tagihan Rutin',
+    category: 'Bills',
+    description: 'Cek daftar subscription aktif (Netflix, Spotify, ChatGPT, Cloud) dan bayar tagihan kartu kredit tepat waktu sebelum jatuh tempo.',
+    targetAmount: 180,
+    targetDate: '2026-10-01',
+    startTime: '19:00',
+    endTime: '19:30',
+    recurrence: 'monthly',
+    reminderMinutes: 1440, // 1 day before
+    status: 'planned',
+  },
+  {
+    id: 'plan-5',
+    title: 'Review Kuartalan Milestone FIRE & Net Worth',
+    category: 'FIRE',
+    description: 'Hitung ulang net worth triwulanan, evaluasi proyeksi safe withdrawal rate (4%), dan pastikan lintasan tahun pensiun dini tetap on track.',
+    targetDate: '2026-10-15',
+    startTime: '09:30',
+    endTime: '11:00',
+    recurrence: 'once',
+    reminderMinutes: 1440,
+    status: 'planned',
+  },
+];
+

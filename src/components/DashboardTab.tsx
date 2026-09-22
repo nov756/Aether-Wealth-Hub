@@ -12,11 +12,15 @@ import {
   Layers,
   ChevronRight,
   AlertCircle,
+  Flame,
+  CalendarCheck,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
   Account,
   CurrencyConfig,
+  DailyStreakState,
+  FinancialCalendarPlan,
   FIREParams,
   SavingsGoal,
   Subscription,
@@ -26,6 +30,9 @@ import {
 import { calculateFIRE, calculateHealthScore, formatMoney } from '../utils/formatters';
 import { CashflowTrendChart } from './CashflowTrendChart';
 import { AssetAllocationChart } from './AssetAllocationChart';
+import { AIFinancialAnalyst } from './AIFinancialAnalyst';
+import { CashflowBarChart } from './CashflowBarChart';
+import { GoalProgressTracker } from './GoalProgressTracker';
 
 interface DashboardTabProps {
   accounts: Account[];
@@ -36,6 +43,10 @@ interface DashboardTabProps {
   currency: CurrencyConfig;
   setActiveTab: (tab: TabType) => void;
   onOpenTransaction: (type: 'income' | 'expense') => void;
+  streak?: DailyStreakState;
+  onCheckInStreak?: () => void;
+  plans?: FinancialCalendarPlan[];
+  onDepositGoal?: (goalId: string, amountUSD: number) => void;
 }
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
@@ -47,6 +58,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   currency,
   setActiveTab,
   onOpenTransaction,
+  streak,
+  onCheckInStreak,
+  plans = [],
+  onDepositGoal,
 }) => {
   // 1. Calculate Balances
   const netWorth = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
@@ -139,6 +154,56 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Daily Track & Streak Reminder Banner */}
+      {streak && (
+        <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-emerald-50 rounded-2xl p-4 sm:p-5 border border-orange-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-orange-500/20 shrink-0">
+              <Flame className="w-6 h-6 fill-white text-white animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-black text-slate-900 text-sm sm:text-base">
+                  Daily Track: {streak.streakCount} Hari Streak Aktif 🔥
+                </span>
+                <span
+                  className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                    streak.checkedInToday
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : 'bg-orange-100 text-orange-800 border-orange-300'
+                  }`}
+                >
+                  {streak.checkedInToday ? '✓ Tercatat Hari Ini' : 'Belum Check-in'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1">
+                {streak.checkedInToday
+                  ? 'Konsistensi Anda terjaga! Setiap mutasi yang dicatat menjauhkan dari kebocoran anggaran.'
+                  : 'Pengingat harian: Luangkan 1 menit untuk memeriksa transaksi dan klaim streak hari ini.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-end">
+            {!streak.checkedInToday && onCheckInStreak && (
+              <button
+                onClick={onCheckInStreak}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105 text-white font-bold text-xs shadow-md shadow-orange-500/20 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Flame className="w-3.5 h-3.5 fill-white" />
+                <span>Klaim Streak Hari Ini</span>
+              </button>
+            )}
+            <button
+              onClick={() => onOpenTransaction('expense')}
+              className="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              + Catat Mutasi
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Primary Section: Health Score + 4 Key Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -359,7 +424,31 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </div>
 
-      {/* Charts Section */}
+      {/* AI Financial Analyst (Powered by Gemini API) */}
+      <AIFinancialAnalyst
+        transactions={transactions}
+        currency={currency}
+        summary={{
+          netWorth,
+          liquidCash,
+          totalIncome,
+          totalExpense,
+          savingsRate,
+        }}
+      />
+
+      {/* 6-Month Income vs Expense Bar Chart (Recharts) */}
+      <CashflowBarChart transactions={transactions} currency={currency} />
+
+      {/* Interactive Goal Progress Tracker (d3.js) - Visualisasi Sisa Dana yang Dibutuhkan */}
+      <GoalProgressTracker
+        goals={goals}
+        currency={currency}
+        setActiveTab={setActiveTab}
+        onDepositGoal={onDepositGoal}
+      />
+
+      {/* Secondary Trend & Asset Allocation Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <CashflowTrendChart currency={currency} transactions={transactions} />
@@ -369,61 +458,141 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </div>
 
-      {/* Recent Activity Mini Feed */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
+      {/* Recent Activity & Upcoming Plans Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity Mini Feed */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-slate-900 text-sm sm:text-base">
-              Transaksi Terkini
-            </h3>
-            <p className="text-xs text-slate-500">Arus kas terbaru yang tercatat di rekening</p>
-          </div>
-          <button
-            onClick={() => setActiveTab('transactions')}
-            className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
-          >
-            <span>Buka Semua</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="divide-y divide-slate-100 text-xs">
-          {transactions.slice(0, 4).map((tx) => {
-            const acc = accounts.find((a) => a.id === tx.accountId);
-            const isInc = tx.type === 'income';
-            return (
-              <div
-                key={tx.id}
-                className="py-3 flex items-center justify-between hover:bg-slate-50/70 px-2 rounded-xl transition-colors"
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                  Transaksi Terkini
+                </h3>
+                <p className="text-xs text-slate-500">Arus kas terbaru yang tercatat di rekening</p>
+              </div>
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
               >
-                <div className="flex items-center gap-3">
+                <span>Buka Semua</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="divide-y divide-slate-100 text-xs">
+              {transactions.slice(0, 4).map((tx) => {
+                const acc = accounts.find((a) => a.id === tx.accountId);
+                const isInc = tx.type === 'income';
+                return (
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
-                      isInc
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        : 'bg-slate-100 text-slate-600 border border-slate-200'
-                    }`}
+                    key={tx.id}
+                    className="py-3 flex items-center justify-between hover:bg-slate-50/70 px-2 rounded-xl transition-colors"
                   >
-                    {isInc ? '+' : '-'}
-                  </div>
-                  <div>
-                    <div className="font-bold text-slate-900">{tx.desc}</div>
-                    <div className="text-[11px] text-slate-400">
-                      {tx.date} • {tx.category} • {acc ? acc.name : 'Akun Utama'}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold ${
+                          isInc
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        {isInc ? '+' : '-'}
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-900">{tx.desc}</div>
+                        <div className="text-[11px] text-slate-400">
+                          {tx.date} • {tx.category} • {acc ? acc.name : 'Akun Utama'}
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`text-right font-extrabold text-sm ${
+                        isInc ? 'text-emerald-600' : 'text-slate-900'
+                      }`}
+                    >
+                      {isInc ? '+' : '-'}
+                      {formatMoney(tx.amount, currency)}
                     </div>
                   </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Financial Plans & Google Calendar Summary Card */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                  <CalendarCheck className="w-4 h-4" />
                 </div>
-                <div
-                  className={`text-right font-extrabold text-sm ${
-                    isInc ? 'text-emerald-600' : 'text-slate-900'
-                  }`}
-                >
-                  {isInc ? '+' : '-'}
-                  {formatMoney(tx.amount, currency)}
+                <div>
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+                    Rencana Google Kalender
+                  </h3>
+                  <p className="text-xs text-slate-500">Jadwal evaluasi anggaran & setoran investasi</p>
                 </div>
               </div>
-            );
-          })}
+              <button
+                onClick={() => setActiveTab('calendar')}
+                className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+              >
+                <span>Kelola Plan</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {plans.slice(0, 3).map((plan) => {
+                const isSynced = !!plan.googleEventId;
+                return (
+                  <div
+                    key={plan.id}
+                    className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="font-black text-[10px] text-indigo-600 uppercase bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200">
+                          {plan.targetDate}
+                        </span>
+                        {isSynced && (
+                          <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            ✓ Google Cal
+                          </span>
+                        )}
+                      </div>
+                      <div className="font-bold text-slate-900 truncate">
+                        {plan.title}
+                      </div>
+                    </div>
+
+                    {plan.targetAmount && (
+                      <div className="text-right font-black text-indigo-700 shrink-0">
+                        {currency.symbol}{' '}
+                        {(plan.targetAmount * currency.rateFromUSD).toLocaleString(currency.locale, {
+                          maximumFractionDigits: 0,
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] text-slate-500 font-medium">
+              {plans.length} Agenda Finansial Terdaftar
+            </span>
+            <button
+              onClick={() => setActiveTab('calendar')}
+              className="text-xs font-extrabold text-indigo-600 hover:underline cursor-pointer"
+            >
+              + Ajuin Plan Baru
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

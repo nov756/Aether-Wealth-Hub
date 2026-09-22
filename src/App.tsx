@@ -4,6 +4,7 @@ import {
   Account,
   CurrencyCode,
   CurrencyConfig,
+  FinancialCalendarPlan,
   FIREParams,
   SavingsGoal,
   Subscription,
@@ -19,15 +20,21 @@ import {
   INITIAL_ACCOUNTS,
   INITIAL_FIRE_PARAMS,
   INITIAL_GOALS,
+  INITIAL_PLANS,
   INITIAL_SUBSCRIPTIONS,
   INITIAL_TRANSACTIONS,
 } from './data/initialData';
+import { INITIAL_STREAK_STATE, getTodayDateString, generateWeeklyDays } from './data/streakData';
 import { Header } from './components/Header';
+import { AppSidebar } from './components/AppSidebar';
+import { AppTopBar } from './components/AppTopBar';
+import { MobileBottomBar } from './components/MobileBottomBar';
 import { LandingView } from './components/LandingView';
 import { DashboardTab } from './components/DashboardTab';
 import { AccountsTab } from './components/AccountsTab';
 import { BudgetingTab } from './components/BudgetingTab';
 import { TransactionsTab } from './components/TransactionsTab';
+import { CalendarTab } from './components/CalendarTab';
 import { FIRESimulatorTab } from './components/FIRESimulatorTab';
 import { SettingsTab } from './components/SettingsTab';
 import { TransactionModal } from './components/TransactionModal';
@@ -36,6 +43,7 @@ import { GoalModal } from './components/GoalModal';
 import { SubscriptionModal } from './components/SubscriptionModal';
 import { AuthModal } from './components/AuthModals';
 import { CheckCircle2 } from 'lucide-react';
+import { DailyStreakState } from './types';
 
 const STORAGE_KEY_PREFIX = 'aether_wealth_bright_v2_';
 
@@ -123,6 +131,15 @@ export default function App() {
     }
   });
 
+  const [plans, setPlans] = useState<FinancialCalendarPlan[]>(() => {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}plans`);
+      return saved ? JSON.parse(saved) : INITIAL_PLANS;
+    } catch {
+      return INITIAL_PLANS;
+    }
+  });
+
   // Modal Visibility States
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
@@ -133,12 +150,89 @@ export default function App() {
   const [goalModalOpen, setGoalModalOpen] = useState(false);
   const [subModalOpen, setSubModalOpen] = useState(false);
 
+  // Daily Track & Streak State (Saved in LocalStorage)
+  const [streak, setStreak] = useState<DailyStreakState>(() => {
+    try {
+      const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}streak`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const todayStr = getTodayDateString();
+        const checkedToday = parsed.lastCheckInDate === todayStr;
+        return {
+          ...parsed,
+          checkedInToday: checkedToday,
+          weeklyActivity: generateWeeklyDays(parsed.lastCheckInDate),
+        };
+      }
+      return INITIAL_STREAK_STATE;
+    } catch {
+      return INITIAL_STREAK_STATE;
+    }
+  });
+
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   // Toast notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3200);
+  };
+
+  // Sync Streak to LocalStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}streak`, JSON.stringify(streak));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [streak]);
+
+  // Streak Action Handlers
+  const handleCheckInStreak = () => {
+    const todayStr = getTodayDateString();
+    if (streak.checkedInToday && streak.lastCheckInDate === todayStr) {
+      showToast('Streak hari ini sudah tercatat. Pertahankan konsistensi finansial!');
+      return;
+    }
+
+    const nextCount = streak.streakCount + 1;
+    const nextBest = Math.max(streak.bestStreak, nextCount);
+
+    setStreak((prev) => ({
+      ...prev,
+      streakCount: nextCount,
+      bestStreak: nextBest,
+      lastCheckInDate: todayStr,
+      checkedInToday: true,
+      weeklyActivity: generateWeeklyDays(todayStr),
+    }));
+
+    showToast(`🔥 Streak bertambah! ${nextCount} Hari Disiplin Finansial!`);
+  };
+
+  const handleToggleStreakTask = (taskId: string) => {
+    setStreak((prev) => {
+      const updated = prev.dailyTasks.map((t) =>
+        t.id === taskId ? { ...t, completed: !t.completed } : t
+      );
+      return {
+        ...prev,
+        dailyTasks: updated,
+      };
+    });
+  };
+
+  const handleToggleReminder = () => {
+    setStreak((prev) => {
+      const nextVal = !prev.reminderEnabled;
+      showToast(`Pengingat keuangan harian ${nextVal ? 'diaktifkan (20:00)' : 'dinonaktifkan'}.`);
+      return {
+        ...prev,
+        reminderEnabled: nextVal,
+      };
+    });
   };
 
   // Sync to LocalStorage
@@ -193,6 +287,14 @@ export default function App() {
       console.error(e);
     }
   }, [fireParams]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}plans`, JSON.stringify(plans));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [plans]);
 
   // Sync theme model to document body and LocalStorage
   useEffect(() => {
@@ -413,6 +515,7 @@ export default function App() {
       goals,
       subscriptions,
       fireParams,
+      plans,
       exportedAt: new Date().toISOString(),
     };
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
@@ -432,6 +535,7 @@ export default function App() {
       setGoals(INITIAL_GOALS);
       setSubscriptions(INITIAL_SUBSCRIPTIONS);
       setFireParams(INITIAL_FIRE_PARAMS);
+      setPlans(INITIAL_PLANS);
       showToast('Data berhasil dikembalikan ke pengaturan default.');
     }
   };
@@ -453,147 +557,266 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Main Top Navigation Bar */}
-      <Header
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        currentUser={currentUser}
-        currentTheme={theme}
-        onSelectTheme={handleSelectTheme}
-        onOpenLogin={handleOpenLogin}
-        onOpenRegister={handleOpenRegister}
-        onLogout={handleLogout}
-        currency={currency}
-        setCurrency={setCurrency}
-        onOpenTransaction={handleOpenTransaction}
-        onResetData={handleResetData}
-      />
+      {/* View Routing: Landing View vs App Workspace with Left Sidebar */}
+      {currentView === 'landing' ? (
+        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Header on Landing */}
+          <Header
+            currentView={currentView}
+            setCurrentView={setCurrentView}
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            currentUser={currentUser}
+            currentTheme={theme}
+            onSelectTheme={handleSelectTheme}
+            onOpenLogin={handleOpenLogin}
+            onOpenRegister={handleOpenRegister}
+            onLogout={handleLogout}
+            currency={currency}
+            setCurrency={setCurrency}
+            onOpenTransaction={handleOpenTransaction}
+            onResetData={handleResetData}
+          />
 
-      {/* Main View Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <AnimatePresence mode="wait">
-          {currentView === 'landing' ? (
-            <motion.div
-              key="landing-view"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <LandingView
-                currency={currency}
-                onOpenRegister={handleOpenRegister}
-                onOpenLogin={handleOpenLogin}
-                onDemoLogin={handleDemoLogin}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="app-view"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              {activeTab === 'dashboard' && (
-                <DashboardTab
-                  key="dashboard"
-                  accounts={accounts}
-                  transactions={transactions}
-                  goals={goals}
-                  subscriptions={subscriptions}
-                  fireParams={fireParams}
-                  currency={currency}
-                  setActiveTab={setActiveTab}
-                  onOpenTransaction={handleOpenTransaction}
-                />
-              )}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+            <LandingView
+              currency={currency}
+              onOpenRegister={handleOpenRegister}
+              onOpenLogin={handleOpenLogin}
+              onDemoLogin={handleDemoLogin}
+            />
+          </main>
 
-              {activeTab === 'accounts' && (
-                <AccountsTab
-                  key="accounts"
-                  accounts={accounts}
-                  currency={currency}
-                  onOpenAddAccount={() => setAccountModalOpen(true)}
-                  onDeleteAccount={handleDeleteAccount}
-                  onUpdateBalance={handleUpdateBalance}
-                />
-              )}
+          {/* Landing Footer */}
+          <footer className="border-t border-slate-200 bg-white/70 py-6 mt-auto">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="font-semibold text-slate-700">Aether OS</span>
+                <span>• Desain Terang & Interaktif</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setCurrentView('app')}
+                  className="text-indigo-600 hover:underline font-semibold cursor-pointer"
+                >
+                  Buka Dashboard
+                </button>
+                <span>Kaidah 50/30/20 • Trinity 4% FIRE Rule</span>
+              </div>
+            </div>
+          </footer>
+        </div>
+      ) : (
+        <div className="flex-1 flex min-w-0">
+          {/* Fiture-Fiture di Sebelah Kiri Pengguna (Left Sidebar) */}
+          <AppSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            currentView={currentView}
+            setCurrentView={setCurrentView}
+            currentUser={currentUser}
+            onOpenLogin={handleOpenLogin}
+            onLogout={handleLogout}
+            onOpenTransaction={handleOpenTransaction}
+            currency={currency}
+            streak={streak}
+            onCheckInStreak={handleCheckInStreak}
+            onToggleStreakTask={handleToggleStreakTask}
+            onToggleReminder={handleToggleReminder}
+            mobileOpen={mobileSidebarOpen}
+            setMobileOpen={setMobileSidebarOpen}
+          />
 
-              {activeTab === 'budgeting' && (
-                <BudgetingTab
-                  key="budgeting"
-                  transactions={transactions}
-                  goals={goals}
-                  subscriptions={subscriptions}
-                  currency={currency}
-                  onOpenAddGoal={() => setGoalModalOpen(true)}
-                  onOpenAddSub={() => setSubModalOpen(true)}
-                  onToggleSubscription={handleToggleSubscription}
-                  onDepositGoal={handleDepositGoal}
-                />
-              )}
+          {/* Isi Konten di Sebelah Kanan (Right Main Content Area) */}
+          <div className="flex-1 min-w-0 flex flex-col min-h-screen bg-slate-50/70">
+            {/* Top Navigation & Controls */}
+            <AppTopBar
+              activeTab={activeTab}
+              onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+              currency={currency}
+              setCurrency={setCurrency}
+              currentTheme={theme}
+              onSelectTheme={handleSelectTheme}
+              onOpenTransaction={handleOpenTransaction}
+              onResetData={handleResetData}
+              streak={streak}
+              currentUser={currentUser}
+            />
 
-              {activeTab === 'transactions' && (
-                <TransactionsTab
-                  key="transactions"
-                  transactions={transactions}
-                  accounts={accounts}
-                  currency={currency}
-                  onOpenAddTransaction={handleOpenTransaction}
-                  onDeleteTransaction={handleDeleteTransaction}
-                />
-              )}
+            {/* Active Feature Tab Body */}
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 lg:pb-8">
+              <AnimatePresence mode="wait">
+                {activeTab === 'dashboard' && (
+                  <motion.div
+                    key="dashboard"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <DashboardTab
+                      accounts={accounts}
+                      transactions={transactions}
+                      goals={goals}
+                      subscriptions={subscriptions}
+                      fireParams={fireParams}
+                      currency={currency}
+                      setActiveTab={setActiveTab}
+                      onOpenTransaction={handleOpenTransaction}
+                      streak={streak}
+                      onCheckInStreak={handleCheckInStreak}
+                      plans={plans}
+                      onDepositGoal={handleDepositGoal}
+                    />
+                  </motion.div>
+                )}
 
-              {activeTab === 'simulator' && (
-                <FIRESimulatorTab
-                  key="simulator"
-                  params={fireParams}
-                  setParams={setFireParams}
-                  currency={currency}
-                />
-              )}
+                {activeTab === 'accounts' && (
+                  <motion.div
+                    key="accounts"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <AccountsTab
+                      accounts={accounts}
+                      currency={currency}
+                      onOpenAddAccount={() => setAccountModalOpen(true)}
+                      onDeleteAccount={handleDeleteAccount}
+                      onUpdateBalance={handleUpdateBalance}
+                    />
+                  </motion.div>
+                )}
 
-              {activeTab === 'settings' && (
-                <SettingsTab
-                  key="settings"
-                  currentUser={currentUser}
-                  onUpdateUser={handleUpdateUser}
-                  currentTheme={theme}
-                  onSelectTheme={handleSelectTheme}
-                  currency={currency}
-                  setCurrency={setCurrency}
-                  onResetData={handleResetData}
-                  onLogout={handleLogout}
-                  onExportData={handleExportData}
-                />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </main>
+                {activeTab === 'budgeting' && (
+                  <motion.div
+                    key="budgeting"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <BudgetingTab
+                      transactions={transactions}
+                      goals={goals}
+                      subscriptions={subscriptions}
+                      currency={currency}
+                      onOpenAddGoal={() => setGoalModalOpen(true)}
+                      onOpenAddSub={() => setSubModalOpen(true)}
+                      onToggleSubscription={handleToggleSubscription}
+                      onDepositGoal={handleDepositGoal}
+                    />
+                  </motion.div>
+                )}
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white/70 py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="font-semibold text-slate-700">Aether OS</span>
-            <span>• Desain Terang (Crisp Light Mode) & Interaktif</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setCurrentView(currentView === 'landing' ? 'app' : 'landing')}
-              className="text-indigo-600 hover:underline font-semibold cursor-pointer"
-            >
-              {currentView === 'landing' ? 'Buka Dashboard' : 'Lihat Halaman Depan'}
-            </button>
-            <span>Kaidah 50/30/20 • Trinity 4% FIRE Rule</span>
+                {activeTab === 'transactions' && (
+                  <motion.div
+                    key="transactions"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <TransactionsTab
+                      transactions={transactions}
+                      accounts={accounts}
+                      currency={currency}
+                      onOpenAddTransaction={handleOpenTransaction}
+                      onDeleteTransaction={handleDeleteTransaction}
+                    />
+                  </motion.div>
+                )}
+
+                {activeTab === 'simulator' && (
+                  <motion.div
+                    key="simulator"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <FIRESimulatorTab
+                      params={fireParams}
+                      setParams={setFireParams}
+                      currency={currency}
+                    />
+                  </motion.div>
+                )}
+
+                {activeTab === 'calendar' && (
+                  <motion.div
+                    key="calendar"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <CalendarTab
+                      plans={plans}
+                      setPlans={setPlans}
+                      currency={currency}
+                    />
+                  </motion.div>
+                )}
+
+                {activeTab === 'settings' && (
+                  <motion.div
+                    key="settings"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <SettingsTab
+                      currentUser={currentUser}
+                      onUpdateUser={handleUpdateUser}
+                      currentTheme={theme}
+                      onSelectTheme={handleSelectTheme}
+                      currency={currency}
+                      setCurrency={setCurrency}
+                      onResetData={handleResetData}
+                      onLogout={handleLogout}
+                      onExportData={handleExportData}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </main>
+
+            {/* App Footer */}
+            <footer className="border-t border-slate-200/90 bg-white/70 py-5 mt-auto pb-24 lg:pb-5">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="font-semibold text-slate-700">Aether OS</span>
+                  <span>• Desain Terang & Interaktif</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setCurrentView('landing')}
+                    className="text-indigo-600 hover:underline font-semibold cursor-pointer"
+                  >
+                    Lihat Halaman Depan
+                  </button>
+                  <span>Kaidah 50/30/20 • Trinity 4% FIRE Rule</span>
+                </div>
+              </div>
+            </footer>
+
+            {/* Mobile Bottom Navigation & Action Bar (One-Hand Reachability) */}
+            <MobileBottomBar
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              onOpenSidebar={() => setMobileSidebarOpen(true)}
+              onOpenTransaction={handleOpenTransaction}
+              streak={streak}
+              onCheckInStreak={handleCheckInStreak}
+            />
           </div>
         </div>
-      </footer>
+      )}
 
       {/* Modals */}
       <AnimatePresence>

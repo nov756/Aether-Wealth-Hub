@@ -177,7 +177,23 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({
 
       {/* Accounts Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredAccounts.map((acc) => {
+        {filteredAccounts.length === 0 ? (
+          <div className="col-span-full py-12 px-6 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white space-y-3">
+            <Building2 className="w-10 h-10 text-slate-300 mx-auto" />
+            <h4 className="font-bold text-slate-800 text-sm">Belum Ada Rekening atau Dompet</h4>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Tambahkan rekening bank, dompet tunai, atau akun investasi Anda untuk mulai mencatat saldo.
+            </p>
+            <button
+              onClick={onOpenAddAccount}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Tambah Rekening Baru</span>
+            </button>
+          </div>
+        ) : (
+          filteredAccounts.map((acc) => {
           const isEditing = editingId === acc.id;
           return (
             <div
@@ -273,7 +289,7 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({
               </div>
             </div>
           );
-        })}
+        }))}
       </div>
     </motion.div>
   );
